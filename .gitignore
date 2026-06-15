@@ -7,3 +7,4 @@ __pycache__/
 *.ipynb_checkpoints
 stuff-to-help-me-learn/
 .python-version
+output_dir/
