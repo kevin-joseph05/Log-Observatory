@@ -1,10 +1,8 @@
-from src.utils.spark_session import spark
 from pyspark.sql.functions import regexp_extract
 
-df = spark.read.text([
-    "data/raw/access_log_Jul95",
-    "data/raw/access_log_Aug95"
-])
+from src.utils.spark_session import spark
+
+df = spark.read.text(["data/raw/access_log_Jul95", "data/raw/access_log_Aug95"])
 pattern = r'^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"(\S+)\s+(\S+)\s+\S+"\s+(\d{3})\s+(\d+|-)$'
 
 df = df.select(
@@ -17,5 +15,5 @@ df = df.select(
 )
 print(df.filter(df.host == "").count())
 
-#df.show()
-#df.printSchema()
+# df.show()
+# df.printSchema()
