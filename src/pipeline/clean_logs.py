@@ -1,4 +1,5 @@
-from pyspark.sql.functions import col, when, regexp_replace, to_timestamp
+from pyspark.sql.functions import col, regexp_replace, to_timestamp, when
+
 
 class CleanLogs:
     def __init__(self, df):
@@ -10,7 +11,7 @@ class CleanLogs:
                 (col("timestamp") != "") &
                 (col("method") != "") &
                 (col("endpoint") != "") &
-                (col("status") != "") 
+                (col("status") != "")
                 )
 
     def normalize_bytes(self):

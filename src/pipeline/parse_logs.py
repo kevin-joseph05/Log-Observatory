@@ -1,9 +1,12 @@
-from pyspark.sql.functions import regexp_extract, col
+from pyspark.sql.functions import regexp_extract
 
 from src.utils.spark_session import spark
 
-def parse_raw_log(): 
-    df = spark.read.text(["data/raw/access_log_Jul95", "data/raw/access_log_Aug95"])
+
+def parse_raw_log(path=None):
+    if path is None:
+        path = ["data/raw/access_log_Jul95", "data/raw/access_log_Aug95"]
+    df = spark.read.text(path)
     pattern = r'^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"(\S+)\s+(\S+)\s+\S+"\s+(\d{3})\s+(\d+|-)$'
 
     df = df.select(
@@ -18,5 +21,6 @@ def parse_raw_log():
 
 if __name__ == "__main__":
     df = parse_raw_log()
-    df.write.csv("output_dir")
+    df.show()
+    #df.write.csv("output_dir")
 
