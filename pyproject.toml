@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.11", "mypy>=1.15"]
+dev = ["ruff>=0.11", "mypy>=1.15", "pytest>=8.0"]
 
 [tool.ruff]
 target-version = "py311"
