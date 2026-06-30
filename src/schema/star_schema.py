@@ -30,7 +30,9 @@ class StarSchema:
         # i need: year, month, day, hour, day_of_week and surrogate key
         # for my reference - {1:sunday, 2:monday, ..., 7:saturday}
         self.dim_timestamp = self.logs_df.select("timestamp").distinct()
-        self.dim_timestamp = self.dim_timestamp.withColumn("day_of_week", dayofweek(col("timestamp")))
+        self.dim_timestamp = self.dim_timestamp.withColumn(
+            "day_of_week", dayofweek(col("timestamp"))
+        )
         self.dim_timestamp = self.dim_timestamp.withColumn("hour", hour(col("timestamp")))
         self.dim_timestamp = self.dim_timestamp.withColumn("year", year(col("timestamp")))
         self.dim_timestamp = self.dim_timestamp.withColumn("month", month(col("timestamp")))
@@ -59,7 +61,7 @@ class StarSchema:
             .when((col("status") >= 300) & (col("status") < 400), "3xx")
             .when((col("status") >= 400) & (col("status") < 500), "4xx")
             .when((col("status") >= 500) & (col("status") < 600), "5xx")
-            .otherwise("Unknown")
+            .otherwise("Unknown"),
         )
         self.dim_status = self.dim_status.join(df_descriptions, on="status", how="left")
         self.dim_status = self.dim_status.withColumn("status_key", md5(col("status")))
@@ -67,12 +69,13 @@ class StarSchema:
     def build_endpoint_dimension(self):
         # i need each unique endpoint and surrogate key
         self.dim_endpoint = self.logs_df.select("endpoint", "method").distinct()
-        self.dim_endpoint = self.dim_endpoint.withColumn("extracted", regexp_extract(col("endpoint"), r'/(.*?)/', 1))
+        self.dim_endpoint = self.dim_endpoint.withColumn(
+            "extracted", regexp_extract(col("endpoint"), r"/(.*?)/", 1)
+        )
         self.dim_endpoint = self.dim_endpoint.withColumn("endpt_key", md5(col("endpoint")))
 
-
     def build_host_table(self):
-        #i need: client hostnames/ip, and surrogate key
+        # i need: client hostnames/ip, and surrogate key
         self.dim_host = self.logs_df.select("host").distinct()
         self.dim_host = self.dim_host.withColumn("host_key", md5(col("host")))
 
@@ -95,12 +98,13 @@ class StarSchema:
         )
 
     def write_parquet(self, path="output_dir/"):
-        self.fact_requests.write.partitionBy("year", "month").mode("overwrite").parquet(f"{path}fact_requests")
+        self.fact_requests.write.partitionBy("year", "month").mode("overwrite").parquet(
+            f"{path}fact_requests"
+        )
         self.dim_endpoint.write.mode("overwrite").parquet(f"{path}dim_endpoint")
         self.dim_timestamp.write.mode("overwrite").parquet(f"{path}dim_timestamp")
         self.dim_status.write.mode("overwrite").parquet(f"{path}dim_status")
         self.dim_host.write.mode("overwrite").parquet(f"{path}dim_host")
-
 
     def build(self):
         self.build_time_dimension()
@@ -108,6 +112,3 @@ class StarSchema:
         self.build_status_dimension()
         self.build_host_table()
         self.build_fact_table()
-
-
-

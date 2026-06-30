@@ -19,8 +19,8 @@ def parse_raw_log(path=None):
     )
     return df
 
+
 if __name__ == "__main__":
     df = parse_raw_log()
     df.show()
-    #df.write.csv("output_dir")
-
+    # df.write.csv("output_dir")
