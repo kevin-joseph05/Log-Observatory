@@ -6,6 +6,7 @@ from pyspark.sql.functions import (
     day,
     dayofweek,
     hour,
+    md5,
     monotonically_increasing_id,
     month,
     regexp_extract,
@@ -34,7 +35,16 @@ class StarSchema:
         self.dim_timestamp = self.dim_timestamp.withColumn("year", year(col("timestamp")))
         self.dim_timestamp = self.dim_timestamp.withColumn("month", month(col("timestamp")))
         self.dim_timestamp = self.dim_timestamp.withColumn("day", day(col("timestamp")))
-        self.dim_timestamp = self.dim_timestamp.withColumn("timestamp_key", md5(col("timestamp").cast("string")))
+        t = col("timestamp")
+        self.dim_timestamp = self.dim_timestamp.withColumn(
+            "is_business_hour",
+            dayofweek(t).between(2, 6) & hour(t).between(9, 16),
+        )
+        self.dim_timestamp = self.dim_timestamp.withColumn(
+            "period_id",
+            year(t) * 10000 + month(t) * 100 + day(t),
+        )
+        self.dim_timestamp = self.dim_timestamp.withColumn("timestamp_key", md5(t.cast("string")))
 
     def build_status_dimension(self):
         json_path = Path(__file__).resolve().parent / "http-codes.json"
@@ -56,7 +66,7 @@ class StarSchema:
 
     def build_endpoint_dimension(self):
         # i need each unique endpoint and surrogate key
-        self.dim_endpoint = self.logs_df.select("endpoint").distinct()
+        self.dim_endpoint = self.logs_df.select("endpoint", "method").distinct()
         self.dim_endpoint = self.dim_endpoint.withColumn("extracted", regexp_extract(col("endpoint"), r'/(.*?)/', 1))
         self.dim_endpoint = self.dim_endpoint.withColumn("endpt_key", md5(col("endpoint")))
 
@@ -67,26 +77,37 @@ class StarSchema:
         self.dim_host = self.dim_host.withColumn("host_key", md5(col("host")))
 
     def build_fact_table(self):
-        # i don't know what the difference is between this and the raw table
-        # over here, i would need to join all the individual tables to the fact table
         self.fact_requests = self.logs_df.select(
-                monotonically_increasing_id().alias("request_id"),
-                md5(col("endpoint")).alias("endpt_key"),
-                md5(
-                    when((col("status") >= 200) & (col("status") < 300), "2xx")
-                    .when((col("status") >= 300) & (col("status") < 400), "3xx")
-                    .when((col("status") >= 400) & (col("status") < 500), "4xx")
-                    .when((col("status") >= 500) & (col("status") < 600), "5xx")
-                    .otherwise("Unknown")
-                ).alias("status_key"),
-                md5(col("host")).alias("host_key"),
-                md5(col("timestamp").cast("string")).alias("timestamp_key"),
-                col("bytes").cast("long"),
-
-
+            monotonically_increasing_id().alias("request_id"),
+            year(col("timestamp")).alias("year"), 
+            month(col("timestamp")).alias("month"),
+            md5(col("endpoint")).alias("endpt_key"),
+            md5(
+                when(col("status").cast("int").between(200, 299), "2xx")
+                .when(col("status").cast("int").between(300, 399), "3xx")
+                .when(col("status").cast("int").between(400, 499), "4xx")
+                .when(col("status").cast("int").between(500, 599), "5xx")
+                .otherwise("Unknown")
+            ).alias("status_key"),
+            md5(col("host")).alias("host_key"),
+            md5(col("timestamp").cast("string")).alias("timestamp_key"),
+            col("bytes").cast("long"),
         )
 
+    def write_parquet(self, path="output_dir/"):
+        self.fact_requests.write.partitionBy("year", "month").mode("overwrite").parquet(f"{path}fact_requests")
+        self.dim_endpoint.write.mode("overwrite").parquet(f"{path}dim_endpoint")
+        self.dim_timestamp.write.mode("overwrite").parquet(f"{path}dim_timestamp")
+        self.dim_status.write.mode("overwrite").parquet(f"{path}dim_status")
+        self.dim_host.write.mode("overwrite").parquet(f"{path}dim_host")
+
+
     def build(self):
-        pass
+        self.build_time_dimension()
+        self.build_endpoint_dimension()
+        self.build_status_dimension()
+        self.build_host_table()
+        self.build_fact_table()
+
 
 
