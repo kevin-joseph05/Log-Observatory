@@ -79,7 +79,7 @@ class StarSchema:
     def build_fact_table(self):
         self.fact_requests = self.logs_df.select(
             monotonically_increasing_id().alias("request_id"),
-            year(col("timestamp")).alias("year"), 
+            year(col("timestamp")).alias("year"),
             month(col("timestamp")).alias("month"),
             md5(col("endpoint")).alias("endpt_key"),
             md5(

@@ -1,5 +1,5 @@
-from src.pipeline.parse_logs import parse_raw_log
 from src.pipeline.clean_logs import CleanLogs
+from src.pipeline.parse_logs import parse_raw_log
 from src.schema.star_schema import StarSchema
 
 df = parse_raw_log()
