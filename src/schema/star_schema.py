@@ -101,7 +101,7 @@ class StarSchema:
             col("bytes").cast("long"),
         )
 
-    def write_parquet(self, path="output_dir/"):
+    def write_parquet(self, path="data/curated/"):
         self.fact_requests.write.partitionBy("year", "month").mode("overwrite").parquet(
             f"{path}fact_requests"
         )

@@ -8,13 +8,13 @@ project_root = Path.cwd()
 con = duckdb.connect()
 con.execute(f"""
     CREATE VIEW fact_requests AS
-    SELECT * FROM read_parquet('{project_root}/output_dir/fact_requests/**/*.parquet')
+    SELECT * FROM read_parquet('{project_root}/data/curated/fact_requests/**/*.parquet')
 """)
 
 for dim in ['dim_endpoint', 'dim_host', 'dim_status', 'dim_timestamp']:
     con.execute(f"""
         CREATE VIEW {dim} AS
-        SELECT * FROM read_parquet('{project_root}/output_dir/{dim}/*.parquet')
+        SELECT * FROM read_parquet('{project_root}/data/curated/{dim}/*.parquet')
     """)
 
 # Total row count across all 3.5M requests (sanity check before analytics)
