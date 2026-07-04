@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pyspark.sql.functions import (
     col,
+    concat,
     day,
     dayofweek,
     hour,
@@ -63,6 +64,7 @@ class StarSchema:
             .when((col("status") >= 500) & (col("status") < 600), "5xx")
             .otherwise("Unknown"),
         )
+        self.dim_status = self.dim_status.select("status").distinct()
         self.dim_status = self.dim_status.join(df_descriptions, on="status", how="left")
         self.dim_status = self.dim_status.withColumn("status_key", md5(col("status")))
 
@@ -72,7 +74,7 @@ class StarSchema:
         self.dim_endpoint = self.dim_endpoint.withColumn(
             "extracted", regexp_extract(col("endpoint"), r"/(.*?)/", 1)
         )
-        self.dim_endpoint = self.dim_endpoint.withColumn("endpt_key", md5(col("endpoint")))
+        self.dim_endpoint = self.dim_endpoint.withColumn("endpt_key", md5(concat(col("endpoint"), col("method"))))
 
     def build_host_table(self):
         # i need: client hostnames/ip, and surrogate key
@@ -84,7 +86,7 @@ class StarSchema:
             monotonically_increasing_id().alias("request_id"),
             year(col("timestamp")).alias("year"),
             month(col("timestamp")).alias("month"),
-            md5(col("endpoint")).alias("endpt_key"),
+            md5(concat(col("endpoint"), col("method"))).alias("endpt_key"),
             md5(
                 when(col("status").cast("int").between(200, 299), "2xx")
                 .when(col("status").cast("int").between(300, 399), "3xx")
