@@ -74,7 +74,9 @@ class StarSchema:
         self.dim_endpoint = self.dim_endpoint.withColumn(
             "extracted", regexp_extract(col("endpoint"), r"/(.*?)/", 1)
         )
-        self.dim_endpoint = self.dim_endpoint.withColumn("endpt_key", md5(concat(col("endpoint"), col("method"))))
+        self.dim_endpoint = self.dim_endpoint.withColumn(
+            "endpt_key", md5(concat(col("endpoint"), col("method")))
+        )
 
     def build_host_table(self):
         # i need: client hostnames/ip, and surrogate key
