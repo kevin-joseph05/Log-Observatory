@@ -55,18 +55,11 @@ class StarSchema:
             raw = json.load(file)
         rows = [{"status": k, **v} for k, v in raw.items()]
         df_descriptions = spark.createDataFrame(rows)
-        self.dim_status = self.logs_df.withColumn("status", col("status").cast("int"))
-        self.dim_status = self.dim_status.withColumn(
-            "status",
-            when((col("status") >= 200) & (col("status") < 300), "2xx")
-            .when((col("status") >= 300) & (col("status") < 400), "3xx")
-            .when((col("status") >= 400) & (col("status") < 500), "4xx")
-            .when((col("status") >= 500) & (col("status") < 600), "5xx")
-            .otherwise("Unknown"),
-        )
-        self.dim_status = self.dim_status.select("status").distinct()
+        self.dim_status = self.logs_df.select("status").distinct()
         self.dim_status = self.dim_status.join(df_descriptions, on="status", how="left")
-        self.dim_status = self.dim_status.withColumn("status_key", md5(col("status")))
+        self.dim_status = self.dim_status.withColumn("status", col("status").cast("int"))
+        self.dim_status = self.dim_status.withColumn("status_key", md5(col("status").cast("string")))
+        self.dim_status = self.dim_status.drop("code")
 
     def build_endpoint_dimension(self):
         # i need each unique endpoint and surrogate key
@@ -89,13 +82,7 @@ class StarSchema:
             year(col("timestamp")).alias("year"),
             month(col("timestamp")).alias("month"),
             md5(concat(col("endpoint"), col("method"))).alias("endpt_key"),
-            md5(
-                when(col("status").cast("int").between(200, 299), "2xx")
-                .when(col("status").cast("int").between(300, 399), "3xx")
-                .when(col("status").cast("int").between(400, 499), "4xx")
-                .when(col("status").cast("int").between(500, 599), "5xx")
-                .otherwise("Unknown")
-            ).alias("status_key"),
+            md5(col("status")).alias("status_key"),
             md5(col("host")).alias("host_key"),
             md5(col("timestamp").cast("string")).alias("timestamp_key"),
             col("bytes").cast("long"),
