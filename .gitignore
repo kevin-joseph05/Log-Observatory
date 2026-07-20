@@ -8,3 +8,6 @@ __pycache__/
 stuff-to-help-me-learn/
 .python-version
 data/curated/
+observability_dbt/target/
+observability_dbt/dbt_packages/
+observability_dbt/logs/
