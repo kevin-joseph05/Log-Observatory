@@ -10,14 +10,13 @@ sources:
               - not_null
       - name: dim_endpoint
         columns:
-          - name: endpoint_id
+          - name: endpt_key
             tests:
               - unique
       - name: dim_host
       - name: dim_status
         columns:
-          - name: severity
+          - name: status_key
             tests:
-              - accepted_values:
-                  values: ['info', 'warn', 'critical']
+              - unique
       - name: dim_timestamp
