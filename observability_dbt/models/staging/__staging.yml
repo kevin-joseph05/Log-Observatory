@@ -1,0 +1,22 @@
+version: 2
+sources:
+  - name: curated
+    schema: log_observatory
+    tables:
+      - name: fact_requests
+        columns:
+          - name: request_id
+            tests:
+              - not_null
+      - name: dim_endpoint
+        columns:
+          - name: endpt_key
+            tests:
+              - unique
+      - name: dim_host
+      - name: dim_status
+        columns:
+          - name: status_key
+            tests:
+              - unique
+      - name: dim_timestamp
