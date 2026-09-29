@@ -57,7 +57,9 @@ class StarSchema:
         self.dim_status = self.logs_df.select("status").distinct()
         self.dim_status = self.dim_status.join(df_descriptions, on="status", how="left")
         self.dim_status = self.dim_status.withColumn("status", col("status").cast("int"))
-        self.dim_status = self.dim_status.withColumn("status_key", md5(col("status").cast("string")))
+        self.dim_status = self.dim_status.withColumn(
+            "status_key", md5(col("status").cast("string"))
+        )
         self.dim_status = self.dim_status.drop("code")
 
     def build_endpoint_dimension(self):
