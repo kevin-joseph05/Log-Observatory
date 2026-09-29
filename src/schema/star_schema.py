@@ -11,7 +11,6 @@ from pyspark.sql.functions import (
     monotonically_increasing_id,
     month,
     regexp_extract,
-    when,
     year,
 )
 
